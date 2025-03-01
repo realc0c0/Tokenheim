@@ -1,68 +1,43 @@
 <template>
-  <div class="dashboard" :class="{ 'mobile': isMobile }">
+  <div class="dashboard">
     <div class="user-profile">
-      <div class="profile-header">
-        <div class="avatar" v-if="userData.photoUrl">
-          <img :src="userData.photoUrl" :alt="userData.username">
-        </div>
-        <div class="user-info">
-          <h2>{{ userData.username }}</h2>
-          <p class="user-id">ID: {{ userData.id }}</p>
-        </div>
+      <div class="avatar" :style="{ backgroundImage: `url(${userData.photoUrl || '/img/default-avatar.png'})` }">
+        <div class="level">{{ userData.level }}</div>
       </div>
-
-      <div class="stats-grid">
-        <div class="stat-card tokens">
-          <div class="stat-icon">🪙</div>
-          <div class="stat-info">
-            <span class="stat-value">{{ userData.tokens }}</span>
-            <span class="stat-label">Tokens</span>
-          </div>
+      <h2>{{ userData.username }}</h2>
+      <div class="user-stats">
+        <div class="stat">
+          <span class="label">Tokens</span>
+          <span class="value">🪙 {{ userData.tokens }}</span>
         </div>
-        
-        <div class="stat-card level">
-          <div class="stat-icon">⭐</div>
-          <div class="stat-info">
-            <span class="stat-value">{{ userData.level }}</span>
-            <span class="stat-label">Level</span>
-          </div>
-        </div>
-
-        <div class="stat-card rank">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-info">
-            <span class="stat-value">#{{ userData.rank || '???' }}</span>
-            <span class="stat-label">Rank</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="game-stats">
-      <h3>Statistics</h3>
-      <div class="stats-list">
-        <div class="stat-item">
+        <div class="stat">
           <span class="label">Battles Won</span>
-          <span class="value">{{ userData.stats?.battlesWon || 0 }}</span>
+          <span class="value">⚔️ {{ userData.stats.battlesWon }}</span>
         </div>
-        <div class="stat-item">
+        <div class="stat">
           <span class="label">Regions Explored</span>
-          <span class="value">{{ userData.stats?.regionsExplored || 0 }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="label">Total Tokens Earned</span>
-          <span class="value">{{ userData.stats?.totalTokens || 0 }}</span>
+          <span class="value">🗺️ {{ userData.stats.regionsExplored }}</span>
         </div>
       </div>
     </div>
 
     <div class="action-buttons">
-      <button class="action-btn play" @click="$emit('play')">
-        Play Now 🎮
+      <button class="play-btn" @click="$emit('play')">
+        ▶️ Play Game
       </button>
-      <button class="action-btn leaderboard" @click="$emit('showLeaderboard')">
-        Leaderboard 📊
+      <button class="leaderboard-btn" @click="$emit('showLeaderboard')">
+        🏆 Leaderboard
       </button>
+    </div>
+
+    <div class="game-info">
+      <h3>🎮 How to Play</h3>
+      <ul>
+        <li>🗺️ Choose a region to explore</li>
+        <li>⚔️ Battle enemies to earn tokens</li>
+        <li>💪 Level up to become stronger</li>
+        <li>🏆 Compete for top rank</li>
+      </ul>
     </div>
   </div>
 </template>
@@ -91,11 +66,13 @@ onMounted(() => {
   window.addEventListener('resize', setSize)
   setSize()
 })
+
+defineEmits(['play', 'showLeaderboard'])
 </script>
 
 <style scoped>
 .dashboard {
-  padding: 1.5rem;
+  padding: 2rem;
   max-width: 600px;
   margin: 0 auto;
   height: calc(var(--vh, 1vh) * 100);
@@ -104,144 +81,119 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
-.mobile {
-  padding: 1rem;
-}
-
 .user-profile {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  overflow: hidden;
+  margin: 0 auto 1rem;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
 }
 
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.user-info h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.user-id {
-  opacity: 0.7;
-  font-size: 0.9rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.stat-card {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  padding: 1rem;
+.level {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  font-weight: bold;
+  border: 2px solid var(--background);
 }
 
-.stat-icon {
-  font-size: 1.5rem;
+.user-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
-.stat-info {
+.stat {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
-.stat-value {
+.label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.value {
   font-size: 1.2rem;
   font-weight: bold;
 }
 
-.stat-label {
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-
-.game-stats {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-.game-stats h3 {
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-}
-
-.stats-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.stat-item:last-child {
-  border-bottom: none;
-}
-
 .action-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  margin-top: auto;
+  margin: 2rem 0;
 }
 
-.action-btn {
+.play-btn, .leaderboard-btn {
   padding: 1rem;
   border: none;
   border-radius: 12px;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--text);
-  backdrop-filter: blur(5px);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-.action-btn.play {
+.play-btn {
   background: var(--primary);
+  color: white;
 }
 
-.action-btn.leaderboard {
+.leaderboard-btn {
   background: var(--secondary);
+  color: white;
 }
 
-.action-btn:hover {
+.play-btn:hover, .leaderboard-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.1);
 }
 
-.mobile .action-btn {
-  padding: 0.8rem;
-  font-size: 1rem;
+.game-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.game-info h3 {
+  margin-bottom: 1rem;
+}
+
+.game-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.game-info li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile {
+  padding: 1rem;
 }
 
 @media (max-width: 480px) {

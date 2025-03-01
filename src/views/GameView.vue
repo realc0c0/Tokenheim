@@ -59,10 +59,10 @@
 <script setup>
 import { useGameStore } from '../stores/game'
 import { onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import RegionCard from '../components/RegionCard.vue'
 import CombatScene from '../components/CombatScene.vue'
 import PlayerStats from '../components/PlayerStats.vue'
-import { useRouter } from 'vue-router'
 
 const gameStore = useGameStore()
 const router = useRouter()
@@ -87,21 +87,14 @@ const explore = () => {
 
 onMounted(() => {
   const tg = window.Telegram.WebApp
-  tg.BackButton.onClick(() => {
-    if (gameStore.currentRegion) {
-      gameStore.exitRegion()
-    }
-  })
-
-  // Handle back button visibility
-  if (gameStore.currentRegion) {
-    tg.BackButton.show()
-  }
+  tg.BackButton.onClick(() => handleBack())
+  tg.BackButton.show() // Always show back button in game view
 })
 
 onUnmounted(() => {
   const tg = window.Telegram.WebApp
   tg.BackButton.offClick()
+  tg.BackButton.hide()
 })
 </script>
 

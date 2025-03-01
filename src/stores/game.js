@@ -89,6 +89,7 @@ export const useGameStore = defineStore('game', {
           body: JSON.stringify({
             initData: this.telegramApp.initData,
             gameData: {
+              username: this.player.username,
               tokens: this.player.tokens,
               health: this.player.health,
               experience: this.player.experience,

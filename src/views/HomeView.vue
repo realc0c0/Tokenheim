@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Dashboard from '../components/Dashboard.vue'
 import GameView from './GameView.vue'
 import { useGameStore } from '../stores/game'
@@ -55,6 +55,7 @@ const leaderboardData = ref([])
 
 onMounted(async () => {
   const tg = window.Telegram.WebApp
+  tg.BackButton.hide() // Hide back button on home view
   
   // Get user data from initData
   if (tg.initDataUnsafe.user) {
@@ -81,6 +82,11 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load user data:', error)
   }
+})
+
+onUnmounted(() => {
+  const tg = window.Telegram.WebApp
+  tg.BackButton.offClick()
 })
 
 const startGame = () => {

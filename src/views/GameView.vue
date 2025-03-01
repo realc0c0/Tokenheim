@@ -7,6 +7,12 @@
     />
 
     <main class="game-screen">
+      <div class="game-header">
+        <button class="back-btn" @click="handleBack">
+          ← Back
+        </button>
+      </div>
+
       <template v-if="!gameStore.currentRegion">
         <div class="region-select">
           <h2 class="title">Choose Your Path in Tokenheim</h2>
@@ -29,6 +35,15 @@
             <p>{{ gameStore.currentRegion.description }}</p>
           </div>
 
+          <div v-if="!gameStore.inCombat" class="region-exploration">
+            <p class="exploration-text">Exploring {{ gameStore.currentRegion.name }}...</p>
+            <div class="exploration-actions">
+              <button class="explore-btn" @click="explore">
+                🔍 Explore Further
+              </button>
+            </div>
+          </div>
+
           <CombatScene
             v-if="gameStore.inCombat"
             :enemy="gameStore.currentEnemy"
@@ -47,8 +62,28 @@ import { onMounted, onUnmounted } from 'vue'
 import RegionCard from '../components/RegionCard.vue'
 import CombatScene from '../components/CombatScene.vue'
 import PlayerStats from '../components/PlayerStats.vue'
+import { useRouter } from 'vue-router'
 
 const gameStore = useGameStore()
+const router = useRouter()
+
+const handleBack = () => {
+  if (gameStore.currentRegion) {
+    gameStore.exitRegion()
+  } else {
+    router.push('/')
+  }
+}
+
+const explore = () => {
+  // 70% chance of encounter
+  if (Math.random() < 0.7) {
+    gameStore.startCombat()
+  } else {
+    const tg = window.Telegram.WebApp
+    tg.showAlert("You found nothing interesting this time. Keep exploring!")
+  }
+}
 
 onMounted(() => {
   const tg = window.Telegram.WebApp
@@ -123,5 +158,62 @@ onUnmounted(() => {
 
 .region-header p {
   opacity: 0.8;
+}
+
+.game-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.region-exploration {
+  text-align: center;
+  padding: 2rem;
+}
+
+.exploration-text {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  animation: pulse 2s infinite;
+}
+
+.exploration-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.explore-btn {
+  background: var(--primary);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.explore-btn:hover {
+  transform: translateY(-2px);
+  background: var(--secondary);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 </style>

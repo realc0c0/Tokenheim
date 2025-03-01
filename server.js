@@ -72,13 +72,15 @@ app.post('/api/users/:userId/update', (req, res) => {
     return res.status(403).json({ error: 'Invalid init data' });
   }
   
-  // Update user data
+  // Update user data with username
   const currentData = users.get(userId) || {};
-  users.set(userId, {
+  const userData = {
     ...currentData,
     ...gameData,
+    username: gameData.username || currentData.username || 'Anonymous Player',
     lastUpdated: Date.now()
-  });
+  };
+  users.set(userId, userData);
   
   // Update stats
   const stats = userStats.get(userId) || {};
@@ -95,12 +97,23 @@ app.get('/api/leaderboard', (req, res) => {
   const leaderboard = Array.from(users.entries())
     .map(([id, data]) => ({
       id,
-      username: data.username || 'Anonymous',
-      tokens: data.tokens,
-      level: data.level
+      username: data.username || 'Anonymous Player',
+      tokens: data.tokens || 0,
+      level: data.level || 1,
+      stats: data.stats || {
+        battlesWon: 0,
+        regionsExplored: 0,
+        totalTokens: 0
+      }
     }))
-    .sort((a, b) => b.tokens - a.tokens)
-    .slice(0, 100); // Top 100 players
+    .sort((a, b) => {
+      // Sort by tokens first, then by level
+      if (b.tokens !== a.tokens) {
+        return b.tokens - a.tokens;
+      }
+      return b.level - a.level;
+    })
+    .slice(0, 10); // Top 10 players
     
   res.json({ success: true, leaderboard });
 });

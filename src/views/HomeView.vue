@@ -34,8 +34,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import Dashboard from '../components/Dashboard.vue'
 import GameView from './GameView.vue'
 import { useGameStore } from '../stores/game'
+import { useRouter } from 'vue-router'
 
 const gameStore = useGameStore()
+const router = useRouter()
 const isPlaying = ref(false)
 const showingLeaderboard = ref(false)
 const userData = ref({
@@ -93,17 +95,8 @@ const startGame = () => {
   isPlaying.value = true
 }
 
-const showLeaderboard = async () => {
-  try {
-    const response = await fetch('/api/leaderboard')
-    const data = await response.json()
-    if (data.success) {
-      leaderboardData.value = data.leaderboard
-    }
-    showingLeaderboard.value = true
-  } catch (error) {
-    console.error('Failed to load leaderboard:', error)
-  }
+const showLeaderboard = () => {
+  router.push('/leaderboard')
 }
 </script>
 

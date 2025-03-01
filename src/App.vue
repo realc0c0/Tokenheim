@@ -25,29 +25,8 @@ onMounted(() => {
 </script>
 
 <style>
-:root {
-  --primary: #4CAF50;
-  --secondary: #2196F3;
-  --danger: #f44336;
-  --background: #1a1a1a;
-  --text: #ffffff;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  min-height: 100vh;
-}
-
 #app {
   height: 100vh;
-  background: var(--background);
-  color: var(--text);
 }
 
 .dark-theme {

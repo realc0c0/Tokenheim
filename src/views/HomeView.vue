@@ -1,12 +1,10 @@
 <template>
   <div class="home-container">
     <Dashboard 
-      v-if="!isPlaying" 
       :userData="userData"
       @play="startGame"
       @showLeaderboard="showLeaderboard"
     />
-    <GameView v-else />
 
     <div v-if="showingLeaderboard" class="leaderboard-overlay">
       <div class="leaderboard-content">
@@ -31,14 +29,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import Dashboard from '../components/Dashboard.vue'
-import GameView from './GameView.vue'
-import { useGameStore } from '../stores/game'
 import { useRouter } from 'vue-router'
+import Dashboard from '../components/Dashboard.vue'
+import { useGameStore } from '../stores/game'
 
-const gameStore = useGameStore()
 const router = useRouter()
-const isPlaying = ref(false)
+const gameStore = useGameStore()
 const showingLeaderboard = ref(false)
 const userData = ref({
   id: '',
@@ -53,11 +49,10 @@ const userData = ref({
     totalTokens: 0
   }
 })
-const leaderboardData = ref([])
 
 onMounted(async () => {
   const tg = window.Telegram.WebApp
-  tg.BackButton.hide() // Hide back button on home view
+  tg.BackButton.hide()
   
   // Get user data from initData
   if (tg.initDataUnsafe.user) {
@@ -92,7 +87,7 @@ onUnmounted(() => {
 })
 
 const startGame = () => {
-  isPlaying.value = true
+  router.push('/game')
 }
 
 const showLeaderboard = () => {
@@ -104,6 +99,7 @@ const showLeaderboard = () => {
 .home-container {
   min-height: 100vh;
   position: relative;
+  padding: 1rem;
 }
 
 .leaderboard-overlay {

@@ -76,7 +76,6 @@ const handleBack = () => {
 }
 
 const explore = () => {
-  // 70% chance of encounter
   if (Math.random() < 0.7) {
     gameStore.startCombat()
   } else {
@@ -88,13 +87,11 @@ const explore = () => {
 onMounted(() => {
   const tg = window.Telegram.WebApp
   tg.BackButton.onClick(() => handleBack())
-  tg.BackButton.show() // Always show back button in game view
 })
 
 onUnmounted(() => {
   const tg = window.Telegram.WebApp
   tg.BackButton.offClick()
-  tg.BackButton.hide()
 })
 </script>
 
@@ -113,6 +110,27 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
   backdrop-filter: blur(5px);
+}
+
+.game-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 1rem;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .region-select {
@@ -151,26 +169,6 @@ onUnmounted(() => {
 
 .region-header p {
   opacity: 0.8;
-}
-
-.game-header {
-  padding: 1rem;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.back-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .region-exploration {

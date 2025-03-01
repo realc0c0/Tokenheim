@@ -153,6 +153,7 @@ defineEmits(['play', 'showLeaderboard'])
   font-size: 1.1rem;
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
+  width: 100%;
 }
 
 .play-btn {

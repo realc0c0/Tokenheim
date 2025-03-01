@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import GameView from '../views/GameView.vue'
-import LeaderboardView from '../views/LeaderboardView.vue'
+
+// Import views
+const HomeView = () => import('../views/HomeView.vue')
+const GameView = () => import('../views/GameView.vue')
+const LeaderboardView = () => import('../views/LeaderboardView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,8 +22,25 @@ const router = createRouter({
       path: '/leaderboard',
       name: 'leaderboard',
       component: LeaderboardView
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/'
     }
   ]
+})
+
+// Navigation guards
+router.beforeEach((to, from, next) => {
+  const tg = window.Telegram?.WebApp
+  if (tg) {
+    if (to.name === 'home') {
+      tg.BackButton.hide()
+    } else {
+      tg.BackButton.show()
+    }
+  }
+  next()
 })
 
 export default router

@@ -5,40 +5,39 @@
         {{ getEnemyEmoji(enemyType) }}
       </div>
       <div class="enemy-info">
-        <h3>{{ enemy.name }}</h3>
-        <div class="enemy-stats">
-          <span>⚔️ {{ enemy.attack }}</span>
-          <span>🛡️ {{ enemy.defense }}</span>
+        <h3>{{ enemy.type }}</h3>
+        <div class="health-bar">
+          <div 
+            class="health-fill" 
+            :style="{ width: `${(enemy.health / enemy.maxHealth) * 100}%` }"
+          ></div>
+          <span class="health-text">{{ enemy.health }}/{{ enemy.maxHealth }}</span>
         </div>
       </div>
     </div>
 
     <div class="combat-actions">
-      <div class="action-row">
-        <button 
-          class="action-btn attack"
-          @click="handleAction('attack')"
-          :disabled="isActionDisabled"
-        >
-          ⚔️ Attack
-        </button>
-        <button 
-          class="action-btn defend"
-          @click="handleAction('defend')"
-          :disabled="isActionDisabled || playerTokens < 10"
-        >
-          🛡️ Defend (10 🪙)
-        </button>
-      </div>
-      <div class="action-row">
-        <button 
-          class="action-btn special"
-          @click="handleAction('special')"
-          :disabled="isActionDisabled || playerTokens < 20"
-        >
-          ✨ Special (20 🪙)
-        </button>
-      </div>
+      <button 
+        class="action-btn attack"
+        @click="handleAction('attack')"
+        :disabled="isActionDisabled"
+      >
+        ⚔️ Attack
+      </button>
+      <button 
+        class="action-btn defend"
+        @click="handleAction('defend')"
+        :disabled="isActionDisabled || playerTokens < 10"
+      >
+        🛡️ Defend (10 🪙)
+      </button>
+      <button 
+        class="action-btn special"
+        @click="handleAction('special')"
+        :disabled="isActionDisabled || playerTokens < 20"
+      >
+        ✨ Special (20 🪙)
+      </button>
     </div>
 
     <div class="combat-log" ref="logContainer">
@@ -181,13 +180,39 @@ watch(() => props.enemy, () => {
 
 .enemy-info {
   text-align: center;
+  width: 100%;
 }
 
-.enemy-stats {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 0.5rem;
+.enemy-info h3 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.health-bar {
+  width: 100%;
+  height: 20px;
+  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.health-fill {
+  height: 100%;
+  background: #ff4444;
+  transition: width 0.3s ease;
+}
+
+.health-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--tg-theme-text-color, #000);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
 .combat-actions {

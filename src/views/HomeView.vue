@@ -7,7 +7,6 @@
       <Dashboard 
         :userData="userData"
         @play="startGame"
-        @showLeaderboard="showLeaderboard"
       />
     </div>
   </div>
@@ -85,10 +84,6 @@ onMounted(async () => {
 
 const startGame = () => {
   router.push('/game')
-}
-
-const showLeaderboard = () => {
-  router.push('/leaderboard')
 }
 </script>
 

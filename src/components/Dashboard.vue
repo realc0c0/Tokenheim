@@ -40,9 +40,6 @@
       <button class="play-btn" @click="$emit('play')">
         ⚔️ Enter Dungeon
       </button>
-      <button class="leaderboard-btn" @click="$emit('showLeaderboard')">
-        🏆 Leaderboard
-      </button>
     </div>
   </div>
 </template>
@@ -138,7 +135,7 @@ defineEmits(['play', 'showLeaderboard'])
   margin: 2rem 0;
 }
 
-.play-btn, .leaderboard-btn {
+.play-btn {
   padding: 1rem;
   border: none;
   border-radius: 12px;
@@ -147,24 +144,16 @@ defineEmits(['play', 'showLeaderboard'])
   transition: transform 0.2s ease, filter 0.2s ease;
   width: 100%;
   font-weight: 600;
-}
-
-.play-btn {
   background: var(--tg-theme-button-color, #2481cc);
   color: var(--tg-theme-button-text-color, #fff);
 }
 
-.leaderboard-btn {
-  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
-  color: var(--tg-theme-text-color, #000);
-}
-
-.play-btn:hover, .leaderboard-btn:hover {
+.play-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.1);
 }
 
-.play-btn:active, .leaderboard-btn:active {
+.play-btn:active {
   transform: translateY(0);
   filter: brightness(0.9);
 }

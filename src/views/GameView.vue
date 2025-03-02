@@ -1,53 +1,41 @@
 <template>
-  <div class="game-view">
+  <div class="game-container">
     <div v-if="loading" class="loading">
       Loading...
     </div>
     <div v-else>
-      <div v-if="!currentRegion" class="regions">
+      <div v-if="!selectedRegion" class="region-selection">
         <h2>Choose Your Path</h2>
-        <div class="region-grid">
-          <div 
-            v-for="(region, key) in gameStore.regions" 
-            :key="key"
-            class="region-card"
-            :class="{ 'locked': gameStore.player.level < region.minLevel }"
-            @click="enterRegion(key)"
+        <div class="regions-grid">
+          <button
+            v-for="region in availableRegions"
+            :key="region.id"
+            class="region-btn"
+            :class="{ 'locked': region.requiredLevel > playerLevel }"
+            @click="selectRegion(region)"
+            :disabled="region.requiredLevel > playerLevel"
           >
-            <h3>{{ region.name }}</h3>
-            <p>{{ region.description }}</p>
-            <div class="region-info">
-              <span class="difficulty">
-                Difficulty: {{ '⚔️'.repeat(region.difficulty) }}
-              </span>
-              <span class="level-req" v-if="gameStore.player.level < region.minLevel">
-                Required Level: {{ region.minLevel }}
-              </span>
-            </div>
-          </div>
+            <span class="region-name">{{ region.name }}</span>
+            <span class="region-level" v-if="region.requiredLevel > playerLevel">
+              Level {{ region.requiredLevel }} Required
+            </span>
+          </button>
         </div>
       </div>
 
-      <div v-else>
-        <div v-if="gameStore.inCombat">
-          <CombatScene 
-            :enemy="gameStore.currentEnemy"
-            :player="gameStore.player"
-            @attack="handleAttack"
-          />
-        </div>
-        <div v-else class="exploration">
-          <h2>{{ currentRegion.name }}</h2>
-          <p>{{ currentRegion.description }}</p>
-          <div class="action-buttons">
-            <button @click="explore" class="explore-btn">
-              🔍 Explore
-            </button>
-            <button @click="exitRegion" class="exit-btn">
-              🚪 Exit Region
-            </button>
-          </div>
-        </div>
+      <div v-else-if="inCombat" class="combat-container">
+        <CombatScene
+          :enemy="currentEnemy"
+          @attack="handleAttack"
+        />
+      </div>
+
+      <div v-else class="region-info">
+        <h2>{{ selectedRegion.name }}</h2>
+        <p>{{ selectedRegion.description }}</p>
+        <button class="explore-btn" @click="startExploring">
+          🔍 Explore
+        </button>
       </div>
     </div>
   </div>
@@ -62,13 +50,61 @@ import CombatScene from '../components/CombatScene.vue'
 const router = useRouter()
 const gameStore = useGameStore()
 const loading = ref(true)
+const selectedRegion = ref(null)
+const inCombat = ref(false)
+const currentEnemy = ref(null)
 
-const currentRegion = computed(() => gameStore.currentRegion)
+const playerLevel = computed(() => gameStore.player.level)
+
+const availableRegions = computed(() => [
+  {
+    id: 'forest',
+    name: '🌲 Mystic Forest',
+    description: 'A mysterious forest filled with magical creatures.',
+    requiredLevel: 1,
+    enemies: ['Wolf', 'Dark Elf', 'Forest Spirit'],
+    minTokens: 10,
+    maxTokens: 30,
+    minExp: 20,
+    maxExp: 50
+  },
+  {
+    id: 'cave',
+    name: '⛰️ Dragon\'s Cave',
+    description: 'A treacherous cave system home to powerful dragons.',
+    requiredLevel: 3,
+    enemies: ['Young Dragon', 'Cave Troll', 'Dark Knight'],
+    minTokens: 30,
+    maxTokens: 60,
+    minExp: 50,
+    maxExp: 100
+  },
+  {
+    id: 'castle',
+    name: '🏰 Haunted Castle',
+    description: 'An ancient castle overrun by undead warriors.',
+    requiredLevel: 5,
+    enemies: ['Skeleton Knight', 'Ghost', 'Vampire Lord'],
+    minTokens: 50,
+    maxTokens: 100,
+    minExp: 80,
+    maxExp: 150
+  }
+])
 
 onMounted(async () => {
   const tg = window.Telegram?.WebApp
   if (tg) {
-    tg.BackButton.onClick(() => handleBack())
+    tg.BackButton.show()
+    tg.BackButton.onClick(() => {
+      if (inCombat.value) {
+        endCombat()
+      } else if (selectedRegion.value) {
+        selectedRegion.value = null
+      } else {
+        router.push('/')
+      }
+    })
   }
   loading.value = false
 })
@@ -80,61 +116,85 @@ onUnmounted(() => {
   }
 })
 
-const handleBack = () => {
-  if (currentRegion.value) {
-    exitRegion()
-  } else {
-    router.push('/')
-  }
+const selectRegion = (region) => {
+  if (region.requiredLevel > playerLevel.value) return
+  selectedRegion.value = region
 }
 
-const enterRegion = async (regionKey) => {
-  const success = await gameStore.exploreRegion(regionKey)
-  if (!success) {
-    // Level requirement message is shown by the store
-    return
+const startExploring = () => {
+  if (!selectedRegion.value) return
+  
+  const region = selectedRegion.value
+  const enemyType = region.enemies[Math.floor(Math.random() * region.enemies.length)]
+  
+  currentEnemy.value = {
+    type: enemyType,
+    health: 100,
+    maxHealth: 100,
+    minDamage: 10,
+    maxDamage: 20
   }
-}
-
-const explore = async () => {
-  if (Math.random() < 0.7) {
-    await gameStore.startCombat()
-  } else {
-    const tg = window.Telegram?.WebApp
-    if (tg) {
-      tg.showPopup({
-        title: 'Exploration',
-        message: 'You found nothing interesting this time. Keep exploring!'
-      })
-    }
-  }
+  
+  inCombat.value = true
 }
 
 const handleAttack = async () => {
-  const result = await gameStore.attack()
-  if (result.won) {
+  if (!currentEnemy.value || !inCombat.value) return
+
+  // Player attacks
+  const playerDamage = Math.floor(Math.random() * 30) + 20
+  currentEnemy.value.health = Math.max(0, currentEnemy.value.health - playerDamage)
+
+  // Check if enemy is defeated
+  if (currentEnemy.value.health <= 0) {
+    const region = selectedRegion.value
+    const tokensEarned = Math.floor(Math.random() * (region.maxTokens - region.minTokens + 1)) + region.minTokens
+    const expEarned = Math.floor(Math.random() * (region.maxExp - region.minExp + 1)) + region.minExp
+
+    await gameStore.updatePlayerProgress({
+      tokens: tokensEarned,
+      exp: expEarned,
+      stats: {
+        battlesWon: 1,
+        regionsExplored: 1,
+        totalTokens: tokensEarned
+      }
+    })
+
     const tg = window.Telegram?.WebApp
     if (tg) {
       tg.showPopup({
         title: 'Victory!',
-        message: `You won! Earned:\n🪙 ${result.tokens} tokens\n✨ ${result.exp} experience`
+        message: `You defeated the ${currentEnemy.value.type}!\nEarned:\n${tokensEarned} Tokens\n${expEarned} EXP`
+      })
+    }
+
+    endCombat()
+  } else {
+    // Enemy attacks back
+    const enemyDamage = Math.floor(Math.random() * (currentEnemy.value.maxDamage - currentEnemy.value.minDamage + 1)) + currentEnemy.value.minDamage
+    
+    // For now, we'll just show the damage taken
+    const tg = window.Telegram?.WebApp
+    if (tg) {
+      tg.showPopup({
+        message: `${currentEnemy.value.type} hits you for ${enemyDamage} damage!`
       })
     }
   }
-  return result
 }
 
-const exitRegion = () => {
-  gameStore.exitRegion()
+const endCombat = () => {
+  inCombat.value = false
+  currentEnemy.value = null
+  selectedRegion.value = null
 }
 </script>
 
 <style scoped>
-.game-view {
+.game-container {
   min-height: 100vh;
   padding: 1rem;
-  background: var(--tg-theme-bg-color, #fff);
-  color: var(--tg-theme-text-color, #000);
 }
 
 .loading {
@@ -143,96 +203,103 @@ const exitRegion = () => {
   align-items: center;
   height: 100vh;
   font-size: 1.2rem;
-}
-
-.regions h2 {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.region-grid {
-  display: grid;
-  gap: 1.5rem;
-  padding: 0.5rem;
-}
-
-.region-card {
-  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
-  border-radius: 12px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
-}
-
-.region-card:not(.locked):hover {
-  transform: translateY(-2px);
-  filter: brightness(1.05);
-}
-
-.region-card.locked {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.region-card h3 {
-  margin: 0 0 0.5rem;
   color: var(--tg-theme-text-color, #000);
 }
 
-.region-card p {
-  margin: 0 0 1rem;
-  color: var(--tg-theme-hint-color, #999);
-  font-size: 0.9rem;
-}
-
-.region-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-}
-
-.level-req {
-  color: #ff4444;
-}
-
-.exploration {
+.region-selection {
   text-align: center;
 }
 
-.action-buttons {
+.region-selection h2 {
+  margin-bottom: 2rem;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.regions-grid {
   display: grid;
   gap: 1rem;
-  margin-top: 2rem;
+  padding: 0 1rem;
 }
 
-.explore-btn, .exit-btn {
-  padding: 1rem;
+.region-btn {
+  padding: 1.5rem;
   border: none;
   border-radius: 12px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
-  font-weight: 600;
-}
-
-.explore-btn {
   background: var(--tg-theme-button-color, #2481cc);
   color: var(--tg-theme-button-text-color, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 1.1rem;
 }
 
-.exit-btn {
-  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
-  color: var(--tg-theme-text-color, #000);
-}
-
-.explore-btn:hover, .exit-btn:hover {
+.region-btn:not(.locked):hover {
   transform: translateY(-2px);
   filter: brightness(1.1);
 }
 
-.explore-btn:active, .exit-btn:active {
+.region-btn:not(.locked):active {
   transform: translateY(0);
   filter: brightness(0.9);
+}
+
+.region-btn.locked {
+  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.region-name {
+  font-weight: 600;
+}
+
+.region-level {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.region-info {
+  text-align: center;
+  padding: 1rem;
+}
+
+.region-info h2 {
+  margin-bottom: 1rem;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.region-info p {
+  margin-bottom: 2rem;
+  color: var(--tg-theme-text-color, #000);
+  opacity: 0.8;
+}
+
+.explore-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  background: var(--tg-theme-button-color, #2481cc);
+  color: var(--tg-theme-button-text-color, #fff);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.explore-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.explore-btn:active {
+  transform: translateY(0);
+  filter: brightness(0.9);
+}
+
+.combat-container {
+  padding: 1rem;
 }
 </style>

@@ -1,129 +1,63 @@
-const express = require('express')
-const cors = require('cors')
-const { createClient } = require('@supabase/supabase-js')
-require('dotenv').config()
+const express = require('express');
+const { Telegraf } = require('telegraf');
+const cors = require('cors');
+const path = require('path');
+require('dotenv').config();
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+const app = express();
+const port = process.env.PORT || 3000;
 
-// Initialize Supabase
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
-)
+// Initialize bot with your token
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Middleware to verify Telegram WebApp data
-const verifyTelegramWebAppData = (req, res, next) => {
-  // Add your Telegram WebApp verification logic here
-  next()
-}
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// API Routes
-app.get('/api/users/:userId', verifyTelegramWebAppData, async (req, res) => {
-  try {
-    const { userId } = req.params
-    const { data: player } = await supabase
-      .from('players')
-      .select('*')
-      .eq('id', userId)
-      .single()
-
-    if (!player) {
-      return res.status(404).json({ success: false, message: 'Player not found' })
-    }
-
-    const { data: stats } = await supabase
-      .from('player_stats')
-      .select('*')
-      .eq('player_id', userId)
-      .single()
-
-    res.json({
-      success: true,
-      userData: {
-        ...player,
-        stats: stats || {
-          battlesWon: 0,
-          regionsExplored: 0,
-          totalTokens: 0
+// Bot commands
+bot.command('start', (ctx) => {
+  ctx.reply('Welcome to Tokenheim! \nClick the button below to start your adventure:', {
+    reply_markup: {
+      inline_keyboard: [[
+        {
+          text: ' Play Tokenheim',
+          web_app: { url: process.env.WEBAPP_URL }
         }
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching user data:', error)
-    res.status(500).json({ success: false, message: 'Internal server error' })
-  }
-})
-
-app.post('/api/users/:userId/save', verifyTelegramWebAppData, async (req, res) => {
-  try {
-    const { userId } = req.params
-    const { playerData, stats } = req.body
-
-    // Update player data
-    await supabase
-      .from('players')
-      .upsert({
-        id: userId,
-        ...playerData,
-        updated_at: new Date().toISOString()
-      })
-
-    // Update player stats
-    if (stats) {
-      await supabase
-        .from('player_stats')
-        .upsert({
-          player_id: userId,
-          ...stats,
-          updated_at: new Date().toISOString()
-        })
+      ]]
     }
+  });
+});
 
-    res.json({ success: true })
-  } catch (error) {
-    console.error('Error saving user data:', error)
-    res.status(500).json({ success: false, message: 'Internal server error' })
+bot.command('help', (ctx) => {
+  ctx.reply(` Tokenheim Help:\n
+/start - Start the game
+/stats - View your stats
+/help - Show this help message`);
+});
+
+// Express routes
+app.post('/webhook', (req, res) => {
+  const { message } = req.body;
+  if (message) {
+    bot.handleUpdate(req.body);
   }
-})
+  res.sendStatus(200);
+});
 
-app.get('/api/leaderboard', async (req, res) => {
-  try {
-    const { data: players } = await supabase
-      .from('players')
-      .select('*')
-      .order('tokens', { ascending: false })
-      .order('level', { ascending: false })
-      .limit(10)
+// Serve the Vue app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
-    res.json({ success: true, leaderboard: players })
-  } catch (error) {
-    console.error('Error fetching leaderboard:', error)
-    res.status(500).json({ success: false, message: 'Internal server error' })
-  }
-})
+// Start bot
+bot.launch();
 
-app.post('/api/battles', verifyTelegramWebAppData, async (req, res) => {
-  try {
-    const { playerId, battleData } = req.body
+// Start server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
 
-    await supabase
-      .from('battles')
-      .insert({
-        player_id: playerId,
-        ...battleData,
-        created_at: new Date().toISOString()
-      })
-
-    res.json({ success: true })
-  } catch (error) {
-    console.error('Error saving battle data:', error)
-    res.status(500).json({ success: false, message: 'Internal server error' })
-  }
-})
-
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+// Enable graceful stop
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));

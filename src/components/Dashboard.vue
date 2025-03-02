@@ -1,43 +1,48 @@
 <template>
   <div class="dashboard">
-    <div class="user-profile">
-      <div class="avatar" :style="{ backgroundImage: `url(${userData.photoUrl || '/img/default-avatar.png'})` }">
-        <div class="level">{{ userData.level }}</div>
-      </div>
+    <div class="player-info">
       <h2>{{ userData.username }}</h2>
-      <div class="user-stats">
+      <div class="stats">
+        <div class="stat">
+          <span class="label">Level</span>
+          <span class="value">{{ userData.level }}</span>
+        </div>
         <div class="stat">
           <span class="label">Tokens</span>
           <span class="value">🪙 {{ userData.tokens }}</span>
         </div>
         <div class="stat">
+          <span class="label">Experience</span>
+          <span class="value">✨ {{ userData.exp_points }}/{{ userData.level * 100 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="achievements">
+      <h3>Achievements</h3>
+      <div class="achievement-stats">
+        <div class="achievement">
           <span class="label">Battles Won</span>
           <span class="value">⚔️ {{ userData.stats.battlesWon }}</span>
         </div>
-        <div class="stat">
+        <div class="achievement">
           <span class="label">Regions Explored</span>
           <span class="value">🗺️ {{ userData.stats.regionsExplored }}</span>
+        </div>
+        <div class="achievement">
+          <span class="label">Total Tokens</span>
+          <span class="value">💰 {{ userData.stats.totalTokens }}</span>
         </div>
       </div>
     </div>
 
     <div class="action-buttons">
       <button class="play-btn" @click="$emit('play')">
-        ▶️ Play Game
+        ⚔️ Enter Dungeon
       </button>
       <button class="leaderboard-btn" @click="$emit('showLeaderboard')">
         🏆 Leaderboard
       </button>
-    </div>
-
-    <div class="game-info">
-      <h3>🎮 How to Play</h3>
-      <ul>
-        <li>🗺️ Choose a region to explore</li>
-        <li>⚔️ Battle enemies to earn tokens</li>
-        <li>💪 Level up to become stronger</li>
-        <li>🏆 Compete for top rank</li>
-      </ul>
     </div>
   </div>
 </template>
@@ -72,72 +77,59 @@ defineEmits(['play', 'showLeaderboard'])
 
 <style scoped>
 .dashboard {
-  padding: 2rem;
+  padding: 1.5rem;
   max-width: 600px;
   margin: 0 auto;
-  height: calc(var(--vh, 1vh) * 100);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  background: var(--tg-theme-bg-color, #fff);
+  color: var(--tg-theme-text-color, #000);
 }
 
-.user-profile {
+.player-info {
   text-align: center;
   margin-bottom: 2rem;
 }
 
-.avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  margin: 0 auto 1rem;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-  border: 3px solid var(--primary);
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+.player-info h2 {
+  margin: 0 0 1rem;
+  color: var(--tg-theme-text-color, #000);
 }
 
-.level {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: var(--primary);
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  border: 2px solid var(--background);
-}
-
-.user-stats {
+.stats, .achievement-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin: 1rem 0;
 }
 
-.stat {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 12px;
+.stat, .achievement {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  padding: 0.8rem;
+  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  border-radius: 12px;
 }
 
 .label {
   font-size: 0.9rem;
-  opacity: 0.8;
+  color: var(--tg-theme-hint-color, #999);
+  margin-bottom: 0.3rem;
 }
 
 .value {
-  font-size: 1.2rem;
-  font-weight: bold;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.achievements {
+  margin: 2rem 0;
+}
+
+.achievements h3 {
+  text-align: center;
+  margin: 0 0 1rem;
+  color: var(--tg-theme-text-color, #000);
 }
 
 .action-buttons {
@@ -154,16 +146,17 @@ defineEmits(['play', 'showLeaderboard'])
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
   width: 100%;
+  font-weight: 600;
 }
 
 .play-btn {
-  background: var(--primary);
-  color: white;
+  background: var(--tg-theme-button-color, #2481cc);
+  color: var(--tg-theme-button-text-color, #fff);
 }
 
 .leaderboard-btn {
-  background: var(--secondary);
-  color: white;
+  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  color: var(--tg-theme-text-color, #000);
 }
 
 .play-btn:hover, .leaderboard-btn:hover {
@@ -171,39 +164,8 @@ defineEmits(['play', 'showLeaderboard'])
   filter: brightness(1.1);
 }
 
-.game-info {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1.5rem;
-  border-radius: 12px;
-}
-
-.game-info h3 {
-  margin-bottom: 1rem;
-}
-
-.game-info ul {
-  list-style: none;
-  padding: 0;
-}
-
-.game-info li {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.mobile {
-  padding: 1rem;
-}
-
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .stat-card:last-child {
-    grid-column: span 2;
-  }
+.play-btn:active, .leaderboard-btn:active {
+  transform: translateY(0);
+  filter: brightness(0.9);
 }
 </style>

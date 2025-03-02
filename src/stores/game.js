@@ -16,6 +16,30 @@ export const useGameStore = defineStore('game', () => {
     }
   })
 
+  const regions = {
+    frostbyteVault: {
+      name: "Frostbyte Vault",
+      description: "Home to HODL Yetis who freeze players mid-battle",
+      enemies: ["HODL Yeti", "Ice Goblin", "Frozen Trader"],
+      difficulty: 1,
+      minLevel: 1
+    },
+    fomoForest: {
+      name: "FOMO Forest",
+      description: "Trees whisper fake rumors about legendary loot ahead",
+      enemies: ["Shill Spirit", "FUD Phantom", "FOMO Fox"],
+      difficulty: 2,
+      minLevel: 2
+    },
+    pumpDumpCaverns: {
+      name: "Pump & Dump Caverns",
+      description: "Run by Shill Goblins who inflate prices",
+      enemies: ["Shill Goblin", "Pump Knight", "Dump Dragon"],
+      difficulty: 3,
+      minLevel: 3
+    }
+  }
+
   const currentRegion = ref(null)
   const inCombat = ref(false)
   const currentEnemy = ref(null)
@@ -45,7 +69,11 @@ export const useGameStore = defineStore('game', () => {
 
       const stats = await playerService.getPlayerStats(userData.id)
       if (stats) {
-        player.value.stats = stats
+        player.value.stats = {
+          battlesWon: stats.battles_won,
+          regionsExplored: stats.regions_explored,
+          totalTokens: stats.total_tokens
+        }
       } else {
         await playerService.updatePlayerStats(userData.id, player.value.stats)
       }
@@ -64,7 +92,11 @@ export const useGameStore = defineStore('game', () => {
         level: player.value.level,
         exp_points: player.value.exp_points
       })
-      await playerService.updatePlayerStats(player.value.id, player.value.stats)
+      await playerService.updatePlayerStats(player.value.id, {
+        battlesWon: player.value.stats.battlesWon,
+        regionsExplored: player.value.stats.regionsExplored,
+        totalTokens: player.value.stats.totalTokens
+      })
     } catch (error) {
       console.error('Failed to save progress:', error)
     }
@@ -72,8 +104,9 @@ export const useGameStore = defineStore('game', () => {
 
   // Combat actions
   const startCombat = async () => {
+    if (!currentRegion.value) return
     inCombat.value = true
-    currentEnemy.value = generateEnemy()
+    currentEnemy.value = generateEnemy(currentRegion.value)
   }
 
   const attack = async () => {
@@ -94,13 +127,20 @@ export const useGameStore = defineStore('game', () => {
       // Level up check
       if (player.value.exp_points >= player.value.level * 100) {
         player.value.level++
+        const tg = window.Telegram?.WebApp
+        if (tg) {
+          tg.showPopup({
+            title: 'Level Up!',
+            message: `Congratulations! You've reached level ${player.value.level}!`
+          })
+        }
       }
 
       // Save battle result
       await playerService.saveBattleResult(player.value.id, {
         won: true,
         tokensEarned,
-        region: currentRegion.value,
+        region: currentRegion.value.name,
         enemy: currentEnemy.value.type
       })
 
@@ -116,10 +156,25 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // Region exploration
-  const exploreRegion = async (region) => {
+  const exploreRegion = async (regionKey) => {
+    const region = regions[regionKey]
+    if (!region) return
+
+    if (player.value.level < region.minLevel) {
+      const tg = window.Telegram?.WebApp
+      if (tg) {
+        tg.showPopup({
+          title: 'Level Required',
+          message: `You need to be level ${region.minLevel} to enter this region!`
+        })
+      }
+      return false
+    }
+
     currentRegion.value = region
     player.value.stats.regionsExplored++
     await saveProgress()
+    return true
   }
 
   const exitRegion = () => {
@@ -129,17 +184,21 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // Helper functions
-  const generateEnemy = () => {
-    const enemies = ['Goblin', 'Orc', 'Skeleton', 'Dark Elf', 'Troll']
+  const generateEnemy = (region) => {
+    const enemies = region.enemies
+    const enemyType = enemies[Math.floor(Math.random() * enemies.length)]
+    const difficulty = region.difficulty || 1
+    
     return {
-      type: enemies[Math.floor(Math.random() * enemies.length)],
-      health: 100,
-      maxHealth: 100
+      type: enemyType,
+      health: 100 * difficulty,
+      maxHealth: 100 * difficulty
     }
   }
 
   return {
     player,
+    regions,
     currentRegion,
     inCombat,
     currentEnemy,
